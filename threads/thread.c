@@ -7,7 +7,6 @@
 #include "threads/flags.h"
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
-#include "threads/malloc.h"
 #include "threads/palloc.h"
 #include "threads/switch.h"
 #include "threads/synch.h"
@@ -25,6 +24,10 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
+
+/* List of processes in THREAD_SLEEPING state, that is processes
+   that are ready to run but not actually running. */
+static struct list sleep_list;
 
 /* List of all processes.  Processes are added to this list
    when they are first scheduled and removed when they exit. */
@@ -72,6 +75,77 @@ static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
+void update_sleep_list(void);
+
+/*Updates the sleep_list at each timer tick.
+  Is called within timer_tick (). */
+void
+update_sleep_list(void)
+{
+  struct list_elem *e; 
+  for(e = list_begin (&sleep_list); e != list_end (&sleep_list);)
+  {
+    struct thread *t = list_entry (e, struct thread, elem);
+    t->sleep_ticks = t->sleep_ticks - 1;
+    if(t->sleep_ticks <= 0)
+    {
+      e = list_remove(e);
+      ASSERT (is_thread (t));
+
+      enum intr_level old_level = intr_disable ();
+      ASSERT (t->status == THREAD_SLEEPING);
+      list_insert_ordered (&ready_list, &t->elem, (list_less_func*)&highest_priority, NULL );
+      t->status = THREAD_READY;
+      intr_set_level (old_level);
+    }
+   else{
+     e = list_next (e);
+   }
+  } 
+}
+
+/* Boolean function that allows for sorting of threads. */
+bool
+highest_priority(struct list_elem *A, struct list_elem *B)
+{
+  struct thread *T = list_entry (A, struct thread, elem);
+  struct thread *H = list_entry (B, struct thread, elem);
+  return T->priority > H->priority;
+}
+/* Donate Prioriy
+*/
+void thread_priority_donate(void)
+{
+  struct thread *t = thread_current ();
+  struct lock *locket = t->locker;
+  while (t->locker != NULL)
+  {
+    if(!locket->holder || t->priority <= locket->holder->priority)
+      return;
+    locket->holder->priority = t->priority;
+    t = locket->holder;
+    locket = t->locker;
+  }
+}
+/* Decides whether the current thread yields and if it does
+   if it must yield immediately or not. */
+void
+schedule_yield (void)
+{
+  if(list_empty(&ready_list))
+    return;
+  struct list_elem *e = list_front (&ready_list);
+  struct thread *front = list_entry (e, struct thread, elem);
+  if(e != NULL && intr_context ())
+  {
+    /* Check for preemptive */
+    if(thread_current ()->priority < front->priority)
+      intr_yield_on_return ();
+  }
+
+  if(thread_current ()->priority < front->priority)
+    thread_yield ();
+}
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -94,6 +168,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  list_init (&sleep_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -124,8 +199,9 @@ thread_start (void)
 void
 thread_tick (void) 
 {
+  /* Update sleep-list */
+  update_sleep_list ();
   struct thread *t = thread_current ();
-
   /* Update statistics. */
   if (t == idle_thread)
     idle_ticks++;
@@ -207,15 +283,15 @@ thread_create (const char *name, int priority,
   sf->ebp = 0;
 
   intr_set_level (old_level);
-
-  // Add child process to child list
-  t->parent = thread_tid();
-  struct child_process *p = add_child_process(t->tid);
+  old_level = intr_disable ();
+ /* Plan for yield based on priority */
+  schedule_yield();
+  intr_set_level (old_level);
+  t->parent = thread_tid ();
+  struct child *p  = add_child_process(t->tid);
   t->p = p;
-
-  /* Add to run queue. */
+  
   thread_unblock (t);
-
   return tid;
 }
 
@@ -252,7 +328,7 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  list_insert_ordered (&ready_list, &t->elem, (list_less_func*)&highest_priority, NULL );
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -305,15 +381,41 @@ thread_exit (void)
      and schedule another process.  That process will destroy us
      when it calls thread_schedule_tail(). */
   intr_disable ();
-  unlock();
+  //Remove all locks
+  struct thread *t = thread_current ();
+  struct list_elem *e = list_begin (&t->lock_list);
+  while (e!=list_end (&t->lock_list))
+  {
+    struct lock *l = list_entry (e, struct lock, elem);
+    lock_release (l);
+    list_remove(&l->elem);
+    e = list_next (e);
+  }
   list_remove (&thread_current()->allelem);
   thread_current ()->status = THREAD_DYING;
   schedule ();
   NOT_REACHED ();
 }
 
+/* The current thread is put to sleep and will be scheduled again
+   after it's number of ticks given has expired.
+   Based on thread_block, but pushes thread to the sleep list so that 
+   update_sleep_list () interacts with it at each timer tick  */
+void
+thread_sleep (int64_t ticks)
+{
+  ASSERT (!intr_context ());
+  struct thread *cur = thread_current ();
+  cur->status = THREAD_SLEEPING;
+  cur->sleep_ticks = ticks;
+  list_push_back(&sleep_list, &cur->elem);
+  schedule ();
+} 
+
 /* Yields the CPU.  The current thread is not put to sleep and
-   may be scheduled again immediately at the scheduler's whim. */
+   may be scheduled again immediately at the scheduler's whim. 
+   Changed push back to sort to use list_ordered_push_back and
+   the list_less_func boolean function to sort by priority. */
 void
 thread_yield (void) 
 {
@@ -324,7 +426,7 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+    list_insert_ordered (&ready_list, &cur->elem, (list_less_func*)&highest_priority, NULL );
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -347,18 +449,45 @@ thread_foreach (thread_action_func *func, void *aux)
     }
 }
 
-/* Sets the current thread's priority to NEW_PRIORITY. */
+/* Turns interrupts off.
+   Sets the current thread's priority to NEW_PRIORITY.
+   Calls thread_yield if NEW_PRIORITY is not the highest
+   priority.*/
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  enum intr_level old_level = intr_disable();
+  int old = thread_current ()->priority;
+  thread_current ()->original_priority = new_priority;
+  check_priority ();
+  if( thread_current ()->priority  > old )
+    thread_priority_donate ();
+  if( thread_current ()->priority < old )
+    schedule_yield ();
+  intr_set_level (old_level);
 }
-
-/* Returns the current thread's priority. */
+void
+check_priority (void)
+{
+  //Make the current thread's new priority the highest in its list
+  struct thread *curr = thread_current ();
+  curr->priority = curr->original_priority;
+  if(!list_empty(&curr->lock_list))
+  {
+    struct thread *next = list_entry(list_front(&curr->lock_list), struct thread, pri_elem);
+    if(next->priority > curr->priority)
+      curr->priority = next->priority;
+  }
+}
+/* Turns off interrupts.
+   Returns the current thread's priority. */
 int
 thread_get_priority (void) 
 {
-  return thread_current ()->priority;
+  enum intr_level old_level = intr_disable ();
+  int priority = thread_current ()->priority;
+  intr_set_level( old_level );
+  return priority;
 }
 
 /* Sets the current thread's nice value to NICE. */
@@ -476,19 +605,18 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
-  t->magic = THREAD_MAGIC;
-  list_push_back (&all_list, &t->allelem);
-
-  t->exec_file = NULL;
-
+  //Added cause it makes things work
+  t->original_priority = priority;
+  t->locker = NULL;
   list_init(&t->lock_list);
-
+  t->magic = THREAD_MAGIC;
+  t->exec_file = NULL;
   list_init(&t->folder);
-  t->fd = 2; // Make the file descriptor for stderror by default
-
   list_init(&t->offspring);
   t->p = NULL;
   t->parent = -1;
+  t->fd = 2;
+  list_push_back (&all_list, &t->allelem);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
@@ -502,6 +630,8 @@ alloc_frame (struct thread *t, size_t size)
 
   t->stack -= size;
   return t->stack;
+
+ list_init(&t->lock_list);
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
@@ -586,7 +716,6 @@ schedule (void)
     prev = switch_threads (cur, next);
   thread_schedule_tail (prev);
 }
-
 /* Returns a tid to use for a new thread. */
 static tid_t
 allocate_tid (void) 
@@ -604,51 +733,15 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
-
-bool thread_running (int pid)
+bool
+thread_running (int pid)
 {
   struct list_elem *e;
-
-  for (e = list_begin (&all_list); e != list_end (&all_list);
-       e = list_next (e))
-    {
-      struct thread *t = list_entry (e, struct thread, allelem);
-      if (t->tid == pid)
-	{
-	  return true;
-	}
-    }
+  for(e = list_begin (&all_list); e != list_end (&all_list); e = list_next(e))
+  {
+    struct thread *t = list_entry (e, struct thread, allelem);
+    if( t->tid == pid)
+      return true;
+  }
   return false;
-}
-
-void unlock (void)
-{
-  struct thread *t = thread_current();
-  struct list_elem *next, *e = list_begin(&t->lock_list);
-
-  while (e != list_end (&t->lock_list))
-    {
-      next = list_next(e);
-      struct lock *l = list_entry (e, struct lock, elem);
-      lock_release(l);
-      list_remove(&l->elem);
-      e = next;
-    }
-}
-struct file*
-find_file (int fd)
-{
-  struct thread *t = thread_current();
-  struct list_elem *e;
-
-  for (e = list_begin (&t->folder); e != list_end (&t->folder);
-       e = list_next (e))
-        {
-          struct proc *f = list_entry (e, struct proc, elem);
-          if (fd == f->fd)
-	    {
-	      return f->file;
-	    }
-        }
-  return NULL;
 }

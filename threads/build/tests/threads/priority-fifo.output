@@ -1,0 +1,52 @@
+<<<<<<< HEAD
+qemu -hda /tmp/mrLZCgzq_g.dsk -m 4 -net none -nographic -monitor null
+=======
+qemu -hda /tmp/EeEoVEoREZ.dsk -m 4 -net none -nographic -monitor null
+>>>>>>> ac8aeb943d0c3e0b6972356eae88803c02c296b6
+PiLo hda1
+Loading........
+Kernel command line: -q run priority-fifo
+Pintos booting with 4,096 kB RAM...
+383 pages available in kernel pool.
+383 pages available in user pool.
+<<<<<<< HEAD
+Calibrating timer...  104,755,200 loops/s.
+=======
+Calibrating timer...  78,540,800 loops/s.
+>>>>>>> ac8aeb943d0c3e0b6972356eae88803c02c296b6
+Boot complete.
+Executing 'priority-fifo':
+(priority-fifo) begin
+(priority-fifo) 16 threads will iterate 16 times in the same order each time.
+(priority-fifo) If the order varies then there is a bug.
+<<<<<<< HEAD
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+=======
+malloc(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+>>>>>>> ac8aeb943d0c3e0b6972356eae88803c02c296b6
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) iteration: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+(priority-fifo) end
+Execution of 'priority-fifo' complete.
+Timer: 25 ticks
+Thread: 0 idle ticks, 25 kernel ticks, 0 user ticks
+<<<<<<< HEAD
+Console: 1557 characters output
+=======
+Console: 1562 characters output
+>>>>>>> ac8aeb943d0c3e0b6972356eae88803c02c296b6
+Keyboard: 0 keys pressed
+Powering off...

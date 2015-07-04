@@ -1,0 +1,141 @@
+S 140		|
+		     | PROJECT 2: USER PROGRAMS	|
+		     | 	   DESIGN DOCUMENT     	|
+		     +--------------------------+
+
+---- GROUP ----
+
+>> Fill in the names and email addresses of your group members.
+
+Tricia Hinkson <think001@ucr.edu>
+Juan Chavez    <jchav007@ucr.edu>
+
+---- PRELIMINARIES ----
+
+>> If you have any preliminary comments on your submission, notes for the
+>> TAs, or extra credit, please give them here.
+
+>> Please cite any offline or online sources you consulted while
+>> preparing your submission, other than the Pintos documentation, course
+>> text, lecture notes, and course staff.
+
+			   ARGUMENT PASSING
+			   ================
+
+---- DATA STRUCTURES ----
+
+>> A1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+struct proc; Holds the file pointer and file descriptor of any opened file held in a thread's folder. struct lock write_lock so that only one process has access to a file at a time. struct child_process so that children have the appropriate statuses as they execute.
+---- ALGORITHMS ----
+
+>> A2: Briefly describe how you implemented argument parsing.  How do
+>> you arrange for the elements of argv[] to be in the right order?
+>> How do you avoid overflowing the stack page?
+I implemented argument parsing by allocating space in memory, 4 bytes per element and then adding each one to the freed up memory space using memcpy (). Each element was placed correctly in memory by toking the string first and then allocating them to space backwards. You avoid overflowing the stack page by making the space allocated to you very large.
+ 
+---- RATIONALE ----
+
+>> A3: Why does Pintos implement strtok_r() but not strtok()?
+strtok() uses global variables so multi threads using strtok() messes up. Also strtok_r uses a pointer to keep track of its place in memory so it can continue to toke a c-string past the first sentinel.
+>> A4: In Pintos, the kernel separates commands into a executable name
+>> and arguments.  In Unix-like systems, the shell does this
+>> separation.  Identify at least two advantages of the Unix approach.
+If there is not enough memory for a user process you can free some up from the kernel memory that is not being used. Also you can more effectively pack memory this way to allow more processes to run total.
+
+			     SYSTEM CALLS
+			     ============
+
+---- DATA STRUCTURES ----
+
+>> B1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+struct child; Used to keep track of a child process's parent, exit status, and it's parent's status.
+
+>> B2: Describe how file descriptors are associated with open files.
+>> Are file descriptors unique within the entire OS or just within a
+>> single process?
+Each process has a list of files that its using called folder. All files within folder are unique to that process.
+
+---- ALGORITHMS ----
+
+>> B3: Describe your code for reading and writing user data from the
+>> kernel.
+
+
+>> B4: Suppose a system call causes a full page (4,096 bytes) of data
+>> to be copied from user space into the kernel.  What is the least
+>> and the greatest possible number of inspections of the page table
+>> (e.g. calls to pagedir_get_page()) that might result?  What about
+>> for a system call that only copies 2 bytes of data?  Is there room
+>> for improvement in these numbers, and how much?
+pagedir_get_page () makes one call to allocate a page of memory. If this fails then it would give memory one byte at a time until its given enough for the program. Therefore, the least number is 1 and the most is 4096. And for 2 byes of memory the least is 1 and the most is 2.
+
+>> B5: Briefly describe your implementation of the "wait" system call
+>> and how it interacts with process termination.
+In wait the process waits for a semaphore so that it knows that it's thread is dying. When the thread has reached its dying state then 
+
+>> B6: Any access to user program memory at a user-specified address
+>> can fail due to a bad pointer value.  Such accesses must cause the
+>> process to be terminated.  System calls are fraught with such
+>> accesses, e.g. a "write" system call requires reading the system
+>> call number from the user stack, then each of the call's three
+>> arguments, then an arbitrary amount of user memory, and any of
+>> these can fail at any point.  This poses a design and
+>> error-handling problem: how do you best avoid obscuring the primary
+>> function of code in a morass of error-handling?  Furthermore, when
+>> an error is detected, how do you ensure that all temporarily
+>> allocated resources (locks, buffers, etc.) are freed?  In a few
+>> paragraphs, describe the strategy or strategies you adopted for
+>> managing these issues.  Give an example.
+I don't allow you to write to that memory space through the function check_user_vaddr which uses the vaddr.h to make sure that memory you try to access does notcross over into kernel memory.
+---- SYNCHRONIZATION ----
+
+>> B7: The "exec" system call returns -1 if loading the new executable
+>> fails, so it cannot return before the new executable has completed
+>> loading.  How does your code ensure this?  How is the load
+>> success/failure status passed back to the thread that calls "exec"?
+In my struct child I kept a load variable so that I could return the correct value.
+>> B8: Consider parent process P with child process C.  How do you
+>> ensure proper synchronization and avoid race conditions when P
+>> calls wait(C) before C exits?  After C exits?  How do you ensure
+>> that all resources are freed in each case?  How about when P
+>> terminates without waiting, before C exits?  After C exits?  Are
+>> there any special cases?
+I can keep track of this with a semaphore so that the parent has to wait for the child to raise the semaphore before it can exit because it then knows that the child has exited.
+---- RATIONALE ----
+
+>> B9: Why did you choose to implement access to user memory from the
+>> kernel in the way that you did?
+The only other way I knew to get memory from user is to use page_get_dir () which tries to get a page before it only allocates what you need. That was confusing me so I just checked memory with is_user_vaddr().
+>> B10: What advantages or disadvantages can you see to your design
+>> for file descriptors?
+Because all the processes have their own file list they have their own copy of all files. So when a process finishes and closes its file, it doesn't affect other processes that are running.
+>> B11: The default tid_t to pid_t mapping is the identity mapping.
+>> If you changed it, what advantages are there to your approach?
+I didn't change it.
+			   SURVEY QUESTIONS
+			   ================
+
+Answering these questions is optional, but it will help us improve the
+course in future quarters.  Feel free to tell us anything you
+want--these questions are just to spur your thoughts.  You may also
+choose to respond anonymously in the course evaluations at the end of
+the quarter.
+
+>> In your opinion, was this assignment, or any one of the three problems
+>> in it, too easy or too hard?  Did it take too long or too little time?
+This assignment was way too hard. Argument parsing alone took 3 days to get correct. In total, I spent 2 weeks on this.
+>> Did you find that working on a particular part of the assignment gave
+>> you greater insight into some aspect of OS design?
+No.
+>> Is there some particular fact or hint we should give students in
+>> future quarters to help them solve the problems?  Conversely, did you
+>> find any of our guidance to be misleading?
+
+>> Do you have any suggestions for the TAs to more effectively assist
+>> students, either for future quarters or the remaining projects?
+
+>> Any other comments?

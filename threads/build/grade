@@ -1,0 +1,147 @@
+TOTAL TESTING SCORE: 90.0%
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+SUMMARY BY TEST SET
+
+Test Set                                      Pts Max  % Ttl  % Max
+--------------------------------------------- --- --- ------ ------
+tests/threads/Rubric.alarm                     36/ 36  40.0%/ 40.0%
+tests/threads/Rubric.priority                  50/ 60  50.0%/ 60.0%
+--------------------------------------------- --- --- ------ ------
+Total                                                  90.0%/100.0%
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+SUMMARY OF INDIVIDUAL TESTS
+
+Functionality and robustness of alarm clock (tests/threads/Rubric.alarm):
+	     8/ 8 tests/threads/alarm-single
+	     8/ 8 tests/threads/alarm-multiple
+	     8/ 8 tests/threads/alarm-simultaneous
+	     8/ 8 tests/threads/alarm-priority
+
+	     2/ 2 tests/threads/alarm-zero
+	     2/ 2 tests/threads/alarm-negative
+
+	- Section summary.
+	      6/  6 tests passed
+	     36/ 36 points subtotal
+
+Functionality of priority scheduler (tests/threads/Rubric.priority):
+	  ** 0/ 5 tests/threads/priority-change
+	     5/ 5 tests/threads/priority-preempt
+
+	  ** 0/ 5 tests/threads/priority-fifo
+	     5/ 5 tests/threads/priority-sema
+	     5/ 5 tests/threads/priority-condvar
+
+	     5/ 5 tests/threads/priority-donate-one
+	     5/ 5 tests/threads/priority-donate-multiple
+	     5/ 5 tests/threads/priority-donate-multiple2
+	     5/ 5 tests/threads/priority-donate-nest
+	     5/ 5 tests/threads/priority-donate-chain
+	     5/ 5 tests/threads/priority-donate-sema
+	     5/ 5 tests/threads/priority-donate-lower
+
+	- Section summary.
+	     10/ 12 tests passed
+	     50/ 60 points subtotal
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+DETAILS OF tests/threads/priority-change FAILURE:
+
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (priority-change) begin
+  (priority-change) Creating a high-priority thread 2.
+  (priority-change) Thread 2 now lowering priority.
+  (priority-change) Thread 2 should have just lowered its priority.
+  (priority-change) Thread 2 exiting.
+  (priority-change) Thread 2 should have just exited.
+  (priority-change) end
+Differences in `diff -u' format:
+  (priority-change) begin
+  (priority-change) Creating a high-priority thread 2.
+  (priority-change) Thread 2 now lowering priority.
+- (priority-change) Thread 2 should have just lowered its priority.
++ (priority-change) (priority-change) Thread 2 should have just lowered its priority.
+  (priority-change) Thread 2 exiting.
+- (priority-change) Thread 2 should have just exited.
++ Thread 2 should have just exited.
+  (priority-change) end
+
+OUTPUT FROM tests/threads/priority-change:
+
+qemu -hda /tmp/ddztD3DoMP.dsk -m 4 -net none -nographic -monitor null
+PiLo hda1
+Loading........
+Kernel command line: -q run priority-change
+Pintos booting with 4,096 kB RAM...
+383 pages available in kernel pool.
+383 pages available in user pool.
+Calibrating timer...  104,755,200 loops/s.
+Boot complete.
+Executing 'priority-change':
+(priority-change) begin
+(priority-change) Creating a high-priority thread 2.
+(priority-change) Thread 2 now lowering priority.
+(priority-change) (priority-change) Thread 2 should have just lowered its priority.
+(priority-change) Thread 2 exiting.
+Thread 2 should have just exited.
+(priority-change) end
+Execution of 'priority-change' complete.
+Timer: 21 ticks
+Thread: 0 idle ticks, 21 kernel ticks, 0 user ticks
+Console: 649 characters output
+Keyboard: 0 keys pressed
+Powering off...
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+DETAILS OF tests/threads/priority-fifo FAILURE:
+
+run: TIMEOUT after 60 seconds of host CPU time
+
+OUTPUT FROM tests/threads/priority-fifo:
+
+qemu -hda /tmp/Biw7dU0KnX.dsk -m 4 -net none -nographic -monitor null
+PiLo hda1
+Loading........
+Kernel command line: -q run priority-fifo
+Pintos booting with 4,096 kB RAM...
+383 pages available in kernel pool.
+383 pages available in user pool.
+Calibrating timer...  78,540,800 loops/s.
+Boot complete.
+Executing 'priority-fifo':
+(priority-fifo) begin
+(priority-fifo) 16 threads will iterate 16 times in the same order each time.
+(priority-fifo) If the order varies then there is a bug.
+(priority-fifo) Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault Exception)
+Unexpected interrupt 0x0e (#PF Page-Fault E
+TIMEOUT after 60 seconds of host CPU time

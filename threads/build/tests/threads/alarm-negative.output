@@ -1,0 +1,23 @@
+<<<<<<< HEAD
+qemu -hda /tmp/HMpzrrqcgi.dsk -m 4 -net none -nographic -monitor null
+=======
+qemu -hda /tmp/y2Z5lzWwFf.dsk -m 4 -net none -nographic -monitor null
+>>>>>>> ac8aeb943d0c3e0b6972356eae88803c02c296b6
+PiLo hda1
+Loading........
+Kernel command line: -q run alarm-negative
+Pintos booting with 4,096 kB RAM...
+383 pages available in kernel pool.
+383 pages available in user pool.
+Calibrating timer...  104,755,200 loops/s.
+Boot complete.
+Executing 'alarm-negative':
+(alarm-negative) begin
+(alarm-negative) PASS
+(alarm-negative) end
+Execution of 'alarm-negative' complete.
+Timer: 21 ticks
+Thread: 1 idle ticks, 20 kernel ticks, 0 user ticks
+Console: 409 characters output
+Keyboard: 0 keys pressed
+Powering off...

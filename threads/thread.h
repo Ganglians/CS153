@@ -9,6 +9,7 @@
 enum thread_status
   {
     THREAD_RUNNING,     /* Running thread. */
+    THREAD_SLEEPING,     /* Sleeping thread. */
     THREAD_READY,       /* Not running but ready to run. */
     THREAD_BLOCKED,     /* Waiting for an event to trigger. */
     THREAD_DYING        /* About to be destroyed. */
@@ -89,7 +90,9 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
-
+    int64_t sleep_ticks;		/* Number of ticks to wait for when
+					   sleeping.
+					*/
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
@@ -101,21 +104,16 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
 
-    // Needed to keep track of locks thread holds
-    struct list lock_list;
-
-    // Needed for file system sys calls
-    struct list folder;
+    int original_priority;		/* Added to tell if original or lock wanted priority is higher. */
+    struct lock *locker;		        /* Added to tell what the lock the thread is waiting for. */
+    struct list lock_list;		/* Added to keep track of threads that need lock. */
+    struct list_elem pri_elem;		/* Added to correctly release from lock_list. */
     int fd;
-
-    // Needed for wait / exec sys calls
-    struct list offspring;
-    tid_t parent;
-    // Points to child_process struct in parent's child list
-    struct child* p;
-
-    // Needed for denying writes to executables
+    struct list folder;
     struct file* exec_file;
+    tid_t parent; 
+    struct child* p;
+    struct list offspring;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -140,6 +138,9 @@ tid_t thread_tid (void);
 const char *thread_name (void);
 
 void thread_exit (void) NO_RETURN;
+/* Added for alarm clock function */
+void thread_sleep(int64_t);
+void thread_wake(void);
 void thread_yield (void);
 
 /* Performs some operation on thread t, given auxiliary data AUX. */
@@ -154,8 +155,10 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
+/* Helper functions for thread priorities. */
+void check_priority (void);
+void schedule_yield (void);
+bool highest_priority (struct list_elem*, struct list_elem*); 		//May not be needed
+void thread_priority_donate (void);
 bool thread_running (int pid);
-void unlock (void);
-
-struct file* find_file (int fd);
 #endif /* threads/thread.h */

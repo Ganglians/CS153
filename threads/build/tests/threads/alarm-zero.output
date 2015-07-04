@@ -1,0 +1,33 @@
+<<<<<<< HEAD
+qemu -hda /tmp/wNJZoB9ltr.dsk -m 4 -net none -nographic -monitor null
+=======
+qemu -hda /tmp/Z1UQqwq3GH.dsk -m 4 -net none -nographic -monitor null
+>>>>>>> ac8aeb943d0c3e0b6972356eae88803c02c296b6
+PiLo hda1
+Loading........
+Kernel command line: -q run alarm-zero
+Pintos booting with 4,096 kB RAM...
+383 pages available in kernel pool.
+383 pages available in user pool.
+<<<<<<< HEAD
+Calibrating timer...  104,755,200 loops/s.
+=======
+Calibrating timer...  78,540,800 loops/s.
+>>>>>>> ac8aeb943d0c3e0b6972356eae88803c02c296b6
+Boot complete.
+Executing 'alarm-zero':
+(alarm-zero) begin
+(alarm-zero) PASS
+(alarm-zero) end
+Execution of 'alarm-zero' complete.
+<<<<<<< HEAD
+Timer: 21 ticks
+Thread: 1 idle ticks, 20 kernel ticks, 0 user ticks
+Console: 385 characters output
+=======
+Timer: 22 ticks
+Thread: 1 idle ticks, 21 kernel ticks, 0 user ticks
+Console: 384 characters output
+>>>>>>> ac8aeb943d0c3e0b6972356eae88803c02c296b6
+Keyboard: 0 keys pressed
+Powering off...
